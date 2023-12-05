@@ -73,6 +73,8 @@ require('lazy').setup({
   'tpope/vim-fugitive',
   'tpope/vim-rhubarb',
 
+  -- ys, cs, ds, etc.
+  'tpope/vim-surround',
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
 
@@ -188,12 +190,18 @@ require('lazy').setup({
     },
   },
 
+  -- Goyo for minimizing clutter
+  { 'junegunn/goyo.vim' },
+
+  -- Pencil for writing in markdown
+  { 'preservim/vim-pencil' },
+
   {
     -- Theme inspired by Atom
-    'navarasu/onedark.nvim',
+    'ellisonleao/gruvbox.nvim',
     priority = 1000,
     config = function()
-      vim.cmd.colorscheme 'onedark'
+      vim.cmd.colorscheme 'gruvbox'
     end,
   },
 
@@ -204,7 +212,7 @@ require('lazy').setup({
     opts = {
       options = {
         icons_enabled = false,
-        theme = 'onedark',
+        theme = 'gruvbox',
         component_separators = '|',
         section_separators = '',
       },
@@ -277,6 +285,7 @@ vim.o.hlsearch = false
 
 -- Make line numbers default
 vim.wo.number = true
+vim.wo.relativenumber = true
 
 -- Enable mouse mode
 vim.o.mouse = 'a'
@@ -315,9 +324,24 @@ vim.o.termguicolors = true
 -- See `:help vim.keymap.set()`
 vim.keymap.set({ 'n', 'v' }, '<Space>', '<Nop>', { silent = true })
 
+-- Press 'jk' in insert mode to escape
+vim.keymap.set({ 'i' }, 'jk', '<Esc>', { silent = true })
+
+-- <space>rc to open this file
+vim.keymap.set({ 'n' }, '<leader>rc', ':tabe $MYVIMRC<CR>', { silent = true })
+
+-- Goyo
+vim.keymap.set({ 'n' }, '<leader>gy', ':Goyo<CR>', { silent = true })
+
 -- Remap for dealing with word wrap
 vim.keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
 vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
+
+-- Remap split navigation
+vim.keymap.set({ 'n' }, '<C-h>', '<C-w>h', { silent = true })
+vim.keymap.set({ 'n' }, '<C-j>', '<C-w>j', { silent = true })
+vim.keymap.set({ 'n' }, '<C-k>', '<C-w>k', { silent = true })
+vim.keymap.set({ 'n' }, '<C-l>', '<C-w>l', { silent = true })
 
 -- Diagnostic keymaps
 vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous diagnostic message' })
@@ -336,12 +360,48 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   pattern = '*',
 })
 
+-- [[ Toggle lualine with Goyo ]]
+-- functions for entering and exiting Goyo
+local Goyo_enter = function()
+  require("lualine").hide({
+    place = { "statusline", "tabline", "winbar" },
+    unhide = false,
+    hide = true,
+  })
+end
+local function Goyo_leave()
+  require("lualine").hide({
+    place = { "statusline", "tabline", "winbar" },
+    unhide = true,
+  })
+end
+
+-- group for activating Goyo
+local GoyoGroup = vim.api.nvim_create_augroup("GoyoGroup", {
+  clear = true
+})
+
+-- trigger for activating Goyo
+vim.api.nvim_create_autocmd("User", {
+  pattern = "GoyoEnter",
+  callback = Goyo_enter,
+  group = GoyoGroup,
+})
+vim.api.nvim_create_autocmd("User", {
+  pattern = "GoyoLeave",
+  callback = Goyo_leave,
+  group = GoyoGroup,
+})
+
 -- [[ Configure Telescope ]]
 -- See `:help telescope` and `:help telescope.setup()`
 require('telescope').setup {
   defaults = {
     mappings = {
       i = {
+        ['<esc>'] = "close",
+        ['<C-j>'] = 'move_selection_next',
+        ['<C-k>'] = 'move_selection_previous',
         ['<C-u>'] = false,
         ['<C-d>'] = false,
       },
